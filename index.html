@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"rel="stylesheet">
+    <title>Document</title>
+    <script src="socket.io/socket.io.js"></script>
+    <style>
+        .container{
+            display: inline-block;
+            height:500px;
+            width: 500px;
+            box-shadow:0.5px 0.7px 7px 1px black;
+            background-color:white;
+            margin-left: 400px;
+            border-radius: 10px;;
+        }
+        #con{
+            padding: 35px; 
+            margin: 30px;
+        }
+        input{
+            border:none;
+            padding:none;
+            margin-left:5px;
+        }
+        #type{
+            margin-left: 200px;
+        }
+        input[type="text"]{
+            background-color: moccasin;
+            height:30px;
+            border-radius:10px;;
+            width:280px;
+            font-size: 18px;
+            text-align: center;
+            font-weight: bolder;
+            margin-left: 40px;
+        }
+        input[type="button"]{
+            height:30px;
+            width: 150px;
+            color:white;
+            background-color: indigo;
+            font-weight: bolder; 
+            font-size:large;
+            border-radius: 5px;
+            margin-left: 95px;
+            margin-top: 10px;
+        }
+        input[type="button"]:hover{
+            border:2px solid orange;
+        }
+        #btn{
+            height:34px;
+            width:34px;
+            border:none;
+            outline:none;
+            border-radius: 50%;
+            background-color: mediumspringgreen;
+            color:white;
+            position: relative;
+            top: 7px;
+            left:2px;
+        }
+        #btn:hover{
+            border: 1px solid mediumspringgreen;
+        }
+
+        #chat{
+            margin-top:20px;
+            padding:15px;
+            display: inline-block;
+            height: 330px;
+            overflow: scroll;
+            width: 350px;
+            box-shadow:0.5px 0.7px 7px 1px black;
+            word-break: break-word;
+        }             
+        #chat::-webkit-scrollbar{
+            display: none;
+        }
+        #packet{
+            margin:5px;
+            padding-left:8px;
+            background-color: mediumseagreen;
+            border-radius: 10px;
+            width:130px;
+            word-break: break-word;
+        }
+        #packet h1{
+            padding: 2px;
+        }
+      
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="font-weight:bolder;margin-top:10px;margin-left:150px;"> <font color="red" id="errMsg"></font></div>
+        <div id="con">
+            <input type="text" placeholder="Enter Username" name="userName" id="userName">
+            <input type="button" value="Register to chat" onclick="setUserName();"/>
+        </div>
+    </div>
+</body>
+<script>
+    var socket = io();
+   var userName;
+    function setUserName(){
+        let userName = document.getElementById("userName").value.trim();
+        if(userName.length>2){
+         socket.emit("setUserName",{userName:document.getElementById("userName").value});
+        }else{
+            alert("Username must be greater than 2 letters");
+        }         
+    }
+       
+        socket.on("userExists",(errMsg)=>{
+            document.getElementById("errMsg").innerHTML = errMsg;  
+        })
+
+    socket.on("userRegistered",(ob)=>{
+        alert("Hello "+ob.userName);
+        document.getElementById("errMsg").innerHTML="";
+        userName = ob.userName;
+        let con = document.getElementById("con");
+        con.innerHTML = "<div id='chat'> </div><div class='type'><input type='text' placeholder='Type a message' name='msg' id='msg'/> <button class='material-icons' id='btn' onclick='sendMessage();'>send</button></div>";    
+    });
+
+
+    function sendMessage(){
+      var msgCon = document.getElementById("msg"); 
+      msgCon.innerHTML="";
+        var msg = msgCon.value.trim();
+
+       if(msg)
+        socket.emit("msg",{userName:userName,msg:msg});
+    }
+    socket.on("newMsg",(data)=>{
+        var chat = document.getElementById("chat"); 
+         chat.innerHTML+= "<div id='packet'><h6>"+data.userName+":</h6>"+data.msg+"<div style='font-size:12px;margin-left:80px;'>"+new Date().toLocaleTimeString()+"</div></div>"; 
+          if(data.userName==userName){
+              let allPacket = document.querySelectorAll("#packet").length-1;
+                let cPacket = document.querySelectorAll("#packet")[allPacket];
+                cPacket.style.backgroundColor="grey";
+                cPacket.style.marginLeft="200px";           
+          }
+      
+          if(chat.scrollHeight>400){
+            chat.scrollTop = parseInt(chat.scrollHeight);
+          }
+    });
+</script>
+</html>
